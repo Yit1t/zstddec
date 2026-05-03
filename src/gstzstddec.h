@@ -64,7 +64,7 @@ struct _Gstzstddec
 
   gboolean ready;
 
-  ZSTD_DStream *dstream;
+  ZSTD_DCtx *ZSTD_DCtx;
 
   guint64 offset;
 
