@@ -48,6 +48,7 @@
 #define __GST_ZSTDDEC_H__
 
 #include <gst/gst.h>
+#include <zstd.h>
 
 G_BEGIN_DECLS
 
@@ -61,7 +62,15 @@ struct _Gstzstddec
 
   GstPad *sinkpad, *srcpad;
 
-  gboolean silent;
+  gboolean ready;
+
+  ZSTD_DStream *dstream;
+
+  guint64 offset;
+
+  guint fist_buffer_size;
+
+  guint buffer_size;
 };
 
 G_END_DECLS
