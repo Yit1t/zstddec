@@ -66,6 +66,8 @@
 
 GST_DEBUG_CATEGORY_STATIC (gst_zstddec_debug);
 #define GST_CAT_DEFAULT gst_zstddec_debug
+#define DEFAULT_FIRST_BUFFER_SIZE 1024
+#define DEFAULT_BUFFER_SIZE 1024
 
 /* Filter signals and args */
 enum
@@ -133,8 +135,8 @@ gst_zstddec_class_init (GstzstddecClass * klass)
 
   gst_element_class_set_details_simple (gstelement_class,
       "zstddec",
-      "FIXME:Generic",
-      "FIXME:Generic Template Element", " <<user@hostname.org>>");
+      "FIXME:Decoder",
+      "FIXME:Decodes zstd compressed streams", "Yitong Ren <ren1t@outlook.com>");
 
   gst_element_class_add_pad_template (gstelement_class,
       gst_static_pad_template_get (&src_factory));
@@ -148,32 +150,73 @@ gst_zstddec_class_init (GstzstddecClass * klass)
  * initialize instance structure
  */
 static void
-gst_zstddec_init (Gstzstddec * filter)
+gst_zstddec_init (Gstzstddec * dec)
 {
-  filter->sinkpad = gst_pad_new_from_static_template (&sink_factory, "sink");
-  gst_pad_set_event_function (filter->sinkpad,
+  dec->sinkpad = gst_pad_new_from_static_template (&sink_factory, "sink");
+  gst_pad_set_event_function (dec->sinkpad,
       GST_DEBUG_FUNCPTR (gst_zstddec_sink_event));
-  gst_pad_set_chain_function (filter->sinkpad,
+  gst_pad_set_chain_function (dec->sinkpad,
       GST_DEBUG_FUNCPTR (gst_zstddec_chain));
-  GST_PAD_SET_PROXY_CAPS (filter->sinkpad);
-  gst_element_add_pad (GST_ELEMENT (filter), filter->sinkpad);
+  gst_element_add_pad (GST_ELEMENT (dec), dec->sinkpad);
 
-  filter->srcpad = gst_pad_new_from_static_template (&src_factory, "src");
-  GST_PAD_SET_PROXY_CAPS (filter->srcpad);
-  gst_element_add_pad (GST_ELEMENT (filter), filter->srcpad);
+  dec->srcpad = gst_pad_new_from_static_template (&src_factory, "src");
+  gst_element_add_pad (GST_ELEMENT (dec), dec->srcpad);
 
-  filter->silent = FALSE;
+  dec->first_buffer_size = DEFAULT_FIRST_BUFFER_SIZE;
+  dec->buffer_size = DEFAULT_BUFFER_SIZE;
+
+  gst_zstddec_decompress_init (dec)
+}
+
+
+/* decompress end function
+ * this function ends decompression and frees the decompressor
+ */
+static void
+gst_zstddec_decompress_end (Gstzstddec *dec)
+{
+  if (dec -> ready)
+  {
+    ZSTD_freeDCtx (dec->dstream);
+    dec->dstream = NULL;
+    dec->ready = FALSE;
+  }
+}
+
+/* decompress initial function
+ * this function initial decompressor
+ */
+static void
+gst_zstddec_decompress_init (Gstzstddec *dec)
+{
+  /* Clean up old state*/
+  gst_zstddec_decompress_end(dec);
+
+  /* Create decompressor and check if creation succeeded*/
+  dec->dstream = ZSTD_createDCtx();
+  if (dec->dctx == NULL)
+  {
+    dec->ready = FALSE;
+    GST_ELEMENT_ERROR (dec, CORE, FAILED, (NULL),
+          ("Failed to create and initialize ZSTD decompression stream."));
+    return;
+  }
+
+  /* Set ready and offset*/
+  dec->ready = TRUE;
+  dec->offset = 0;
+
 }
 
 static void
 gst_zstddec_set_property (GObject * object, guint prop_id,
     const GValue * value, GParamSpec * pspec)
 {
-  Gstzstddec *filter = GST_ZSTDDEC (object);
+  Gstzstddec *dec = GST_ZSTDDEC (object);
 
   switch (prop_id) {
     case PROP_SILENT:
-      filter->silent = g_value_get_boolean (value);
+      dec->silent = g_value_get_boolean (value);
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -185,11 +228,11 @@ static void
 gst_zstddec_get_property (GObject * object, guint prop_id,
     GValue * value, GParamSpec * pspec)
 {
-  Gstzstddec *filter = GST_ZSTDDEC (object);
+  Gstzstddec *dec = GST_ZSTDDEC (object);
 
   switch (prop_id) {
     case PROP_SILENT:
-      g_value_set_boolean (value, filter->silent);
+      g_value_set_boolean (value, dec->silent);
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -204,12 +247,12 @@ static gboolean
 gst_zstddec_sink_event (GstPad * pad, GstObject * parent,
     GstEvent * event)
 {
-  Gstzstddec *filter;
+  Gstzstddec *dec;
   gboolean ret;
 
-  filter = GST_ZSTDDEC (parent);
+  dec = GST_ZSTDDEC (parent);
 
-  GST_LOG_OBJECT (filter, "Received %s event: %" GST_PTR_FORMAT,
+  GST_LOG_OBJECT (dec, "Received %s event: %" GST_PTR_FORMAT,
       GST_EVENT_TYPE_NAME (event), event);
 
   switch (GST_EVENT_TYPE (event)) {
@@ -231,21 +274,24 @@ gst_zstddec_sink_event (GstPad * pad, GstObject * parent,
   return ret;
 }
 
+
+
+
 /* chain function
  * this function does the actual processing
  */
 static GstFlowReturn
 gst_zstddec_chain (GstPad * pad, GstObject * parent, GstBuffer * buf)
 {
-  Gstzstddec *filter;
+  Gstzstddec *dec;
 
-  filter = GST_ZSTDDEC (parent);
+  dec = GST_ZSTDDEC (parent);
 
-  if (filter->silent == FALSE)
+  if (dec->silent == FALSE)
     g_print ("I'm plugged, therefore I'm in.\n");
 
   /* just push out the incoming buffer without touching it */
-  return gst_pad_push (filter->srcpad, buf);
+  return gst_pad_push (dec->srcpad, buf);
 }
 
 
