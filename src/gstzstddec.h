@@ -58,19 +58,19 @@ G_DECLARE_FINAL_TYPE (Gstzstddec, gst_zstddec,
 
 struct _Gstzstddec
 {
-  GstElement element;
+  GstElement element; /* Parent element */ 
 
-  GstPad *sinkpad, *srcpad;
+  /* Pads*/
+  GstPad *sinkpad, *srcpad; // pads of the plugins
 
-  gboolean ready;
+  /* Decompression state*/
+  gboolean ready; /* Whether the decompressor is initialized */
+  ZSTD_DCtx *dctx; /* Zstd decompression context */
+  guint64 offset; /* Bytes output so far, 0 means first output */
 
-  ZSTD_DCtx *ZSTD_DCtx;
-
-  guint64 offset;
-
-  guint fist_buffer_size;
-
-  guint buffer_size;
+  /* Properties */
+  guint first_buffer_size; /* The output size of first buffer, used for typefind  */ 
+  guint buffer_size; /* The output size of the other buffers */ 
 };
 
 G_END_DECLS
