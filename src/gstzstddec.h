@@ -3,7 +3,7 @@
  * Copyright (C) 2005 Thomas Vander Stichele <thomas@apestaart.org>
  * Copyright (C) 2005 Ronald S. Bultje <rbultje@ronald.bitfreak.net>
  * Copyright (C) 2020 Niels De Graef <niels.degraef@gmail.com>
- * Copyright (C) 2026  <<user@hostname.org>>
+ * Copyright (C) 2026  Yitong Ren<ren1t@outlook.com>
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -61,7 +61,7 @@ struct _Gstzstddec
   GstElement element; /* Parent element */ 
 
   /* Pads*/
-  GstPad *sinkpad, *srcpad; // pads of the plugins
+  GstPad *sinkpad, *srcpad; /* pads of the plugins */
 
   /* Decompression state*/
   gboolean ready; /* Whether the decompressor is initialized */

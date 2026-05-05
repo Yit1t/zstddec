@@ -2,7 +2,7 @@
  * GStreamer
  * Copyright (C) 2005 Thomas Vander Stichele <thomas@apestaart.org>
  * Copyright (C) 2005 Ronald S. Bultje <rbultje@ronald.bitfreak.net>
- * Copyright (C) 2026  <<user@hostname.org>>
+ * Copyright (C) 2026 Yitong Ren <ren1t@outlook.com>
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -46,12 +46,12 @@
 /**
  * SECTION:element-zstddec
  *
- * FIXME:Describe zstddec here.
+ * Decompresses Zstandard (zstd) compressed streams.
  *
  * <refsect2>
  * <title>Example launch line</title>
  * |[
- * gst-launch -v -m fakesrc ! zstddec ! fakesink silent=TRUE
+ * gst-launch-1.0 filesrc location=file.txt.zst ! zstddec ! filesink location=file.txt
  * ]|
  * </refsect2>
  */
@@ -470,7 +470,7 @@ zstddec_init (GstPlugin * zstddec)
  * compile this code. GST_PLUGIN_DEFINE needs PACKAGE to be defined.
  */
 #ifndef PACKAGE
-#define PACKAGE "myfirstzstddec"
+#define PACKAGE "zstddec"
 #endif
 
 /* gstreamer looks for this structure to register zstddecs */
