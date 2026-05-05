@@ -23,6 +23,7 @@ jobs:
                     gstreamer1.0-tools zstd
             - name: Inspect plugin
               run: |
+                ls -la build/
                 GST_PLUGIN_PATH=./build gst-inspect-1.0 zstddec
 
             - name: Test file
