@@ -21,9 +21,13 @@ jobs:
                     meson ninja-build gcc pkg-config \
                     libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev libzstd-dev \
                     gstreamer1.0-tools zstd
+            - name: Build
+              run: |
+                meson setup build
+                meson compile -C build
+
             - name: Inspect plugin
               run: |
-                ls -la build/
                 GST_PLUGIN_PATH=./build gst-inspect-1.0 zstddec
 
             - name: Test file
