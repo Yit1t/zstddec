@@ -65,10 +65,10 @@ GST_PLUGIN_PATH=./build gst-inspect-1.0 zstddec
 ```bash
 echo "hello world" > file.txt
 zstd file.txt -o file.txt.zst
-zstd -d file.txt.zst > expected.txt
+zstd -d file.txt.zst -o expected.txt
 GST_PLUGIN_PATH=./build gst-launch-1.0 \
-filesrc location=file.txt.zst ! zstddec ! filesink location=file.txt
-diff expected.txt file.txt
+    filesrc location=file.txt.zst ! zstddec ! filesink location=actual.txt
+diff expected.txt actual.txt
 ```
 
 ### Docker (Linux x86-64 verification)
