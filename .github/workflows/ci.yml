@@ -30,13 +30,14 @@ jobs:
               run: |
                 GST_PLUGIN_PATH=./build gst-inspect-1.0 zstddec
 
-            - name: Test file
+            - name: Test decompression matches zstd -d
               run: |
-                echo "hello world" > test.txt
-                zstd test.txt -o test.txt.zst
+                echo "hello world" > file.txt
+                zstd file.txt -o file.txt.zst
+                zstd -d file.txt.zst -o expected.txt
                 GST_PLUGIN_PATH=./build gst-launch-1.0 \
-                    filesrc location=test.txt.zst ! zstddec ! filesink location=output.txt
-                diff test.txt output.txt
+                filesrc location=file.txt.zst ! zstddec ! filesink location=file.txt
+                diff expected.txt file.txt
 
                   
 
